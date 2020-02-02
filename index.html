@@ -1,0 +1,597 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lofter 论坛体排版工具</title>
+    <link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <div class="page">
+    <header>
+        <h1>Lofter 论坛体排版工具</h1>
+        <nav><ul id="nav"></ul></nav>
+    </header>
+    <section id="selayout" name='修改排版'>
+        <h2>Format</h2>
+<textarea class="text" id="layout" placeholder="Layout">
+<p>**[(USER2)-O]2[(USER2)-O]L** [(USER2)-N]USER2[(USER2)-N]</p>
+[(USER1)-E]
+> <p>**[(USER1)-O]1[(USER1)-O]L** [(USER1)-N]USER1[(USER1)-N]</p>
+> [(USER0)-E]<p>**回复 [(USER0)-O]0[(USER0)-O]L [(USER0)-N]USER0[(USER0)-N]**</p>[(USER0)-E]
+> [(USER1)-C]<p>Lorem ipsum dolor sit amet, <@consectetur> adipisicing elit. <br> Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>[(USER1)-C]
+[(USER1)-E]
+[(USER2)-C]
+<p>
+Lorem ipsum dolor sit amet, consectetur <@adipisicing> elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+</p>
+<p>
+Ut enim ad minim veniam, quis nostrud exercitation ulmamco laboris nisi ut aliquip ex ea commodo consequat. 
+</p>
+[(USER2)-C]
+<p></p>
+</textarea>
+        <button class="btn" id="gen-default-pre">生成预览</button>
+        <h2>Preview</h2>
+        <div class="text" id="default-preview"></div>
+    </section>
+
+    <section id="segen" name='逐条生成'>
+        <div class="text" id="gen-preview"></div>
+        <button class="btn" id="copyhtml">复制显示内容的HTML代码</button>
+        <figure id="namelist">
+            <div id="namelistbut"></div>
+            <h4><strong>可 @ 的用户</strong></h4>
+            <p></p>
+            <div id="divnamelist">
+            <ul id="ulnamelist">
+            </ul>
+            </div>
+        </figure>
+            <div class="box">
+            <input type="number" class="text" id="floor" placeholder="floor">
+            <span id="span-l">L</span>
+                <input type="text" class="text" id="name" placeholder="匿名用户">
+            </div>
+            <select id="ref" class="text">
+                <option selected>无引用楼层</option>
+            </select>
+            <textarea class="text" id="comment" placeholder="Comments here..."></textarea>
+            <p></p>
+            <button class="btn" id="del-last">清除上一条</button> <button class="btn" id="del-this">清除此条</button> <button type="button" class="btn" id="gen-line">生成</button>
+            <div id="focus" tabindex="0"></div>
+    </section>
+
+    <section id="seusage" name='使用说明'>
+        <p>
+            <h2>Usage: </h2>
+            <ol>
+                <li>楼层序号自动生成，修改一个会连续修改后面多个。</li>
+                <li>昵称不输入默认为“匿名用户”，提交过的昵称可在左侧列表里点击来“@”。</li>
+                <li>直接复制预览内容可以直接粘贴到 Lofter 富文本编辑器框里。</li>
+                <li>点击“复制显示内容的HTML代码”可以复制其生成的代码内容到剪切板，在网页版 Lofter 里打开查看 HTML 代码，复制进去即可。</li>
+                <li>调整输出格式请自行研究 Format 部分，Format 部分需要在提交前更新。语法请自行探索。</li>
+                <li>本网页不保留 cache，刷新即失踪。</li>
+                <li>删除仅能支持删除当前显示内容的最后一条。</li>
+            </ol>
+        </p>
+        <p>
+            <h2>Todo: </h2>
+            <ol>
+                <li>时间功能</li>
+                <li>编辑任意楼层</li>
+                <li>保留 cache</li>
+                <li>自动删除不存在的用户名</li>
+            </ol>
+        </p>
+    </section>
+    </div>
+    
+    <footer id='footer'><p>Only support Lofter. </p><p>Coded by <em>Veronica Davichi</em></p></footer>
+    
+    <script>
+
+        class Format {
+            constructor() {
+            }
+
+            create(floor) {
+                let ret = ""
+                let temp = this.template
+                let u1 = true
+                let u0 = true
+
+                if (floor.ref == undefined) {
+                    u1 = false
+                } else if (floor.ref.ref == undefined) {
+                    u0 = false
+                } 
+
+                for (let i = temp.length - 1; i >= 0; i--) {
+                    let next = false
+                    if (u1 && !u0) {
+                        if (temp[i] == 'u0es') {
+                            for (; i >= 0; i--) {
+                                if (temp[i] == 'u0ee') {
+                                    next = true
+                                    i-=2
+                                    break
+                                }
+                            }
+                        }
+                    }
+
+                    if (!u1) {
+                        if (temp[i] == 'u1es') {
+                            for (; i >= 0; i--) {
+                                if (temp[i] == 'u1ee') {
+                                    next = true
+                                    i--
+                                    break
+                                }
+                            }
+                        }
+
+                        if (temp[i] == 'u0es') {
+                            for (; i >= 0; i--) {
+                                if (temp[i] == 'u0ee') {
+                                    next = true
+                                    i--
+                                    break
+                                }
+                            }
+                        }
+                    }
+
+                    if (next) continue
+
+                    next = false
+
+                    switch (temp[i]) {
+                        case 'u2o': 
+                            ret += floor.order
+                            break
+                        case 'u2n': 
+                            ret += floor.name
+                            break
+                        case 'u2c': 
+                            ret += floor.comment
+                            break
+                        case 'u1o': 
+                            ret += floor.ref.order
+                            break
+                        case 'u1n': 
+                            ret += floor.ref.name
+                            break
+                        case 'u1c': 
+                            ret += floor.ref.comment
+                            break
+                        case 'u0o': 
+                            ret += floor.ref.ref.order
+                            break
+                        case 'u0n': 
+                            ret += floor.ref.ref.name
+                            break
+                        case 'u0c': 
+                            ret += floor.ref.ref.comment
+                            break
+                        case 'u1es': 
+                        case 'u0es': 
+                        case 'u1ee': 
+                        case 'u0ee': 
+                            break;
+                        default:
+                            ret += temp[i]
+                    }
+                }
+                return ret
+            }
+
+            preview(text) {
+                let gen = ""
+                let bq = false
+                let st = false
+                let hl = false
+
+                for (let i = 0; i < text.length; i++) {
+                    if (text.charAt(i) === '*' && !st) {
+                        i++
+                        st = true
+                        gen += "<strong>"
+                        continue
+                    }
+
+                    if (text.charAt(i) === '*' && st) {
+                        i++
+                        st = false
+                        gen += "</strong>"
+                        continue
+                    }
+
+                    if (text.charAt(i) === '[' && text.substr(i, 6) === "[(USER") {
+                        i+=10
+                        continue
+                    }
+
+                    if ((i > 0 && text.charAt(i) === '>' && text.charAt(i - 1) === '\n') || (text.charAt(0) === '>')) {
+                        if (bq) {
+                            continue
+                        }
+                        bq = true
+                        gen += "<blockquote>"
+                        continue
+                    }
+
+                    if (text.charAt(i) !== '>' && bq && text.charAt(i - 1) === '\n') {
+                        bq = false
+                        gen += "</blockquote>"
+                    }
+
+                    if (text.charAt(i) === '<' && text.substr(i, 2) === "<@") {
+                        hl = true
+                        gen += '<a href="#">'
+                        continue
+                    }
+
+                    if (text.charAt(i) === '>' && hl) {
+                        hl = false
+                        gen += '</a>'
+                        continue
+                    }
+
+                    gen += text.charAt(i)
+                }
+
+                return gen
+            }
+
+            genformat(text) {
+                let lm = Array();
+
+                let u2os = text.indexOf('[(USER2)-O]')
+                let u2oe = text.indexOf('[(USER2)-O]', u2os + 1) + 11
+                let u2ns = text.indexOf('[(USER2)-N]')
+                let u2ne = text.indexOf('[(USER2)-N]', u2ns + 1) + 11
+                let u2cs = text.indexOf('[(USER2)-C]')
+                let u2ce = text.indexOf('[(USER2)-C]', u2cs + 1) + 11
+
+                let u1es = text.indexOf('[(USER1)-E]')
+                let u1ee = text.indexOf('[(USER1)-E]', u1es + 1) + 11
+                let u1os = text.indexOf('[(USER1)-O]')
+                let u1oe = text.indexOf('[(USER1)-O]', u1os + 1) + 11
+                let u1ns = text.indexOf('[(USER1)-N]')
+                let u1ne = text.indexOf('[(USER1)-N]', u1ns + 1) + 11
+                let u1cs = text.indexOf('[(USER1)-C]')
+                let u1ce = text.indexOf('[(USER1)-C]', u1cs + 1) + 11
+
+                let u0es = text.indexOf('[(USER0)-E]')
+                let u0ee = text.indexOf('[(USER0)-E]', u0es + 1) + 11
+                let u0os = text.indexOf('[(USER0)-O]')
+                let u0oe = text.indexOf('[(USER0)-O]', u0os + 1) + 11
+                let u0ns = text.indexOf('[(USER0)-N]')
+                let u0ne = text.indexOf('[(USER0)-N]', u0ns + 1) + 11
+                let u0cs = text.indexOf('[(USER0)-C]')
+                let u0ce = text.indexOf('[(USER0)-C]', u0cs + 1) + 11
+
+                document.getElementById("span-l").innerText = text.charAt(u2oe)
+
+                if(u2os !== -1 || u2oe !== 10) { lm['u2o'] = [u2os, u2oe] }
+                if(u2ns !== -1 || u2ne !== 10) { lm['u2n'] = [u2ns, u2ne] }
+                if(u2cs !== -1 || u2ce !== 10) { lm['u2c'] = [u2cs, u2ce] }
+                
+                if (u1es !== -1 || u1ee !== 10) {
+                    lm['u1e'] = [u1es, u1ee]
+                    if(u1os !== -1 || u1oe !== 10) { 
+                        lm['u1o'] = [u1os, u1oe]
+                        if (text.charAt(u2oe) !== text.charAt(u1oe)) alert("WRONG FORMAT!!!") 
+                    }
+                    if(u1ns !== -1 || u1ne !== 10) { lm['u1n'] = [u1ns, u1ne] }
+                    if(u1cs !== -1 || u1ce !== 10) { lm['u1c'] = [u1cs, u1ce] }
+                }
+                
+                if (u0es !== -1 || u0ee !== 10) {
+                    lm['u0e'] = [u0es, u0ee]
+                    if(u0os !== -1 || u0oe !== 10) { 
+                        lm['u0o'] = [u0os, u0oe]
+                        if (text.charAt(u2oe) !== text.charAt(u0oe)) alert("WRONG FORMAT!!!") 
+                    }
+                    if(u0ns !== -1 || u0ne !== 10) { lm['u0n'] = [u0ns, u0ne] }
+                    if(u0cs !== -1 || u0ce !== 10) { lm['u0c'] = [u0cs, u0ce] }
+                }
+
+                let ll = ['u2o', 'u2n', 'u2c', 'u1o', 'u1n', 'u1c', 'u0o', 'u0n', 'u0c']
+
+                let template = Array()
+
+                for (let j = text.length - 1; j >= 0;) {
+                    if (j == u1ee || j == u0ee) {
+                    
+                        template.push(text.charAt(j))
+
+                        if (j == u1ee) {
+                            template.push('u1ee')
+                        }
+
+                        if (j == u0ee) {
+                            template.push('u0ee')
+                        }
+              
+                        j-=12
+                        continue
+                    }
+
+                    if (j == u1es  || j == u0es) {
+
+                        template.pop()
+                        template.pop()
+                        template.pop()
+                        template.pop()
+                        template.pop()
+                        template.pop()
+                        template.pop()
+                        template.pop()
+                        template.pop()
+                        template.pop()
+
+                        if (j == u1es) {
+                            template.push('u1es')
+                        }
+
+                        if (j == u0es) {
+                            template.push('u0es')
+                        }
+                        
+
+                        j--
+                        continue
+                    }
+
+                    let mark = false
+
+                    for (let i = 0; i < ll.length; i++) {
+                        if (lm[ll[i]] != undefined && j == lm[ll[i]][1]) {
+                            if (!mark) {
+                                template.push(text.charAt(j))
+                            }
+                          
+                            template.push(ll[i])
+                            j = lm[ll[i]][0] - 1
+                         
+                            mark = true
+                            break;
+                        }
+                    }
+
+                    if (mark) continue
+
+                    template.push(text.charAt(j))
+                    j--
+                }
+
+                this.template = template
+            }
+            
+        }
+
+        class Floor {
+            constructor(order, name, ref, comment) {
+                this.order = order
+                this.name = name
+                this.ref = ref
+                this.comment = comment
+            }
+        }
+
+        var format = new Format();
+        var floors = new Array();
+        var names = new Set();
+        var currentPos = 0;
+
+        function output(a) {
+            let ret = ""
+
+            for (let i = a.length - 1; i >= 0; i--) {
+                ret += a[i]
+            }
+
+            console.log(ret)
+        }
+
+        function addFloor(floor) {
+            floors.push(floor)
+
+            let ref = document.getElementById('ref')
+
+            let html = ref.innerHTML
+
+            html += '<option>'+floor.order+document.getElementById("span-l").innerText+"&nbsp;"+floor.name+'</option>'
+
+            ref.innerHTML = html
+
+            names.add(document.getElementById('name').value)
+            
+            updateName()
+        }
+
+        function updateName(){
+            let li = document.getElementById('ulnamelist')
+
+            let ret = ""
+            for (let s of names.keys()) {
+                if (s !== "") {
+                    ret += '<li class="linamelist" id="liname-'+s+'" onmousedown="namepressed(\''+s+'\')" onmouseup="namereleased(\''+s+'\')">'+s+'</li>'
+                }
+            }
+
+            li.innerHTML = ret
+
+            document.getElementById('namelistbut').style.height = "100%"
+        }
+
+        function namepressed(name) {
+            let node = document.getElementById("liname-"+name)
+            node.style.backgroundColor = "#555555"
+            node.style.cursor = "pointer"
+            
+            let comment = document.getElementById("comment")
+
+            comment.value = comment.value.slice(0, currentPos) + " <@" + name + "> " + comment.value.slice(currentPos)
+        }
+
+        function namereleased(name) {
+            let node = document.getElementById("liname-"+name)
+            node.style.backgroundColor = "#aaaaaa"
+            node.style.cursor = "default"
+        }
+
+        function init() {
+            let sections = document.getElementsByTagName('section')
+            for (let i = 0; i < sections.length; i++) {
+                document.getElementById('nav').innerHTML += '<li class="nav-list">' + sections[i].getAttribute('name') + '</li>'
+            }
+   
+            let navlist = document.getElementsByClassName('nav-list')
+            for (let i = 0; i < navlist.length; i++) {
+                navlist[i].onclick=function() {
+                    for (let j = 0; j < navlist.length; j++) {
+                        navlist[j].style.backgroundColor="#555555"
+                        navlist[j].style.color="#888888"
+                        sections[j].style.display="none"
+                    }
+                    this.style.backgroundColor="#1a1a1a"
+                    this.style.color="#cccccc"
+                    sections[i].style.display="block"
+                }
+            }
+
+            document.getElementById('floor').value = 1
+
+            let namelist = document.getElementById('namelist')
+            namelist.style.left = '-2.45em'
+            updateName()
+            namelist.click()
+        }
+
+        document.getElementById('del-this').onclick = function() {
+            document.getElementById('name').value = ''
+            document.getElementById('comment').value = ''
+            document.getElementById('ref').value = "无引用楼层"
+        }
+
+        document.getElementById('del-last').onclick = function() {
+            if (floors.length == 0) return
+            let floor = floors.pop()
+
+            let p = format.preview(format.create(floor)) + '<br />'
+
+            let gp = document.getElementById('gen-preview')
+
+            let v = gp.innerHTML
+            gp.innerHTML = v.substr(0, v.length-p.length)
+
+            document.getElementById('floor').value --
+        }
+
+        document.getElementById('gen-default-pre').onclick = function() {
+            let text = document.getElementById('layout').value
+            document.getElementById('default-preview').innerHTML = format.preview(text)
+            format.genformat(text)
+        }
+
+        document.getElementById('comment').onblur = function () {
+            if(this.selectionStart){
+                currentPos = this.selectionStart;
+            }
+        }
+        document.getElementById('comment').onkeyup = function () {
+            if(this.selectionStart){
+                currentPos = this.selectionStart;
+            }
+        }
+        document.getElementById('comment').onclick = function () {
+            if(this.selectionStart){
+                currentPos = this.selectionStart;
+            }
+        }
+
+        document.getElementById('namelist').onclick = function () {
+            if (this.style.left == '-2.45em') {
+                this.style.left = '-16em'
+                return
+            }
+            if (this.style.left == '-16em') {
+                this.style.left = '-2.45em'
+                return
+            } 
+        }
+
+        document.getElementById('copyhtml').onclick = function () {
+            let cp = document.getElementById('gen-preview').innerHTML
+            
+            copyText(cp)
+        }
+
+        function copyText(text){
+            let tag = document.createElement('input')
+            tag.setAttribute('id', 'cp_hgz_input')
+            tag.value = text
+            document.getElementsByTagName('body')[0].appendChild(tag)
+            document.getElementById('cp_hgz_input').select()
+            document.execCommand('copy')
+            document.getElementById('cp_hgz_input').remove()
+        }
+
+        document.getElementById('gen-line').onclick = function() {
+            let name = document.getElementById('name').value
+            if (name === "") name = "匿名用户"
+
+            let ref = document.getElementById('ref').value
+            if (ref === "无引用楼层") ref = undefined
+            else {
+                let order = ref.substring(0, ref.indexOf(document.getElementById("span-l").innerText))
+                for (let i = 0; i < floors.length; i++) {
+                    if (floors[i].order === order) {
+                        ref = floors[i]
+                        break
+                    }
+                }
+            }
+
+            let comment = document.getElementById('comment').value
+
+            if (comment === "") {
+                document.getElementById('comment').setAttribute('placeholder', "Something should be written here...")
+                return
+            }
+
+            comment = comment.replace(/[\r\n]/g, '</p><p>')
+            comment = comment.replace(/[ ]/g, '&nbsp;')
+
+            let floor = new Floor(document.getElementById('floor').value, name, ref, '<p>'+comment+'</p>')
+            
+            addFloor(floor)
+
+            let p = format.preview(format.create(floor)) + '<br />'
+
+            let gp = document.getElementById('gen-preview')
+
+            gp.innerHTML += p
+
+            let order = document.getElementById('floor').value
+            document.getElementById('floor').value = parseInt(order) + 1
+
+            document.getElementById('ref').value = "无引用楼层"
+
+            document.getElementById('name').value = ""
+
+            document.getElementById('comment').value = ""
+            
+            document.querySelector('#focus').focus()
+            
+        }
+
+        init()
+        document.getElementsByClassName('nav-list')[1].click()
+        document.getElementById('gen-default-pre').click()
+
+</script>
+</body>
+</html>
